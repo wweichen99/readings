@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>批注 | Zhao et al. 2022 — 自适应疏散标识系统</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2744;
+    --navy-light: #243560;
+    --paper: #f8f5ef;
+    --paper-dark: #ede9e0;
+    --ink: #2c2c2c;
+    --ink-muted: #666;
+    --q1: #2e7dd1;   /* 蓝 — VR方法论 */
+    --q1-bg: #e8f2fc;
+    --q2: #c0781a;   /* 橙 — 自适应标识效果 */
+    --q2-bg: #fdf1e2;
+    --q3: #1e8f5e;   /* 绿 — 集中/去中心化架构 */
+    --q3-bg: #e5f6ef;
+    --q4: #8040b8;   /* 紫 — 对MR导航的启示 */
+    --q4-bg: #f3eafb;
+    --q5: #c0392b;   /* 红 — 局限与未来研究 */
+    --q5-bg: #fdecea;
+    --border: #d8d2c5;
+    --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── NAVBAR ── */
+  nav#topbar {
+    background: var(--navy);
+    color: #fff;
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: stretch;
+    gap: 1.5rem;
+    min-height: 56px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  nav#topbar .brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.5rem 0;
+    flex: 1;
+    min-width: 0;
+  }
+  nav#topbar .brand h1 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  nav#topbar .brand .meta {
+    font-size: 0.7rem;
+    color: #aab8d8;
+    font-weight: 300;
+    letter-spacing: 0.03em;
+  }
+  nav#topbar .legend {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: nowrap;
+  }
+  .legend-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 99px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    cursor: default;
+  }
+  .chip-q1 { background: var(--q1); color: #fff; }
+  .chip-q2 { background: var(--q2); color: #fff; }
+  .chip-q3 { background: var(--q3); color: #fff; }
+  .chip-q4 { background: var(--q4); color: #fff; }
+  .chip-q5 { background: var(--q5); color: #fff; }
+
+  /* ── SECTION NAV ── */
+  nav#secnav {
+    background: var(--navy-light);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    position: sticky;
+    top: 56px;
+    z-index: 999;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  nav#secnav::-webkit-scrollbar { display: none; }
+  nav#secnav a {
+    color: #aab8d8;
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 0.65rem 0.75rem;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  nav#secnav a:hover { color: #fff; border-bottom-color: rgba(255,255,255,0.4); }
+  nav#secnav a.active { color: #fff; border-bottom-color: #7eb3f5; }
+
+  /* ── MAIN LAYOUT ── */
+  .page-wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  .paper-header {
+    background: var(--navy);
+    color: #fff;
+    padding: 2rem 2.5rem 1.6rem;
+    border-radius: 6px;
+    margin-bottom: 2rem;
+  }
+  .paper-header .journal {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #7eb3f5;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .paper-header h2 {
+    font-family: 'Lora', serif;
+    font-size: 1.4rem;
+    line-height: 1.4;
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+  }
+  .paper-header .authors {
+    font-size: 0.78rem;
+    color: #aab8d8;
+    line-height: 1.6;
+  }
+  .paper-header .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+  }
+  .paper-header .tag {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #c8d8f0;
+    font-size: 0.68rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── DUAL COLUMN ── */
+  .dual-col {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Left — original text */
+  .text-col {}
+
+  .section-block {
+    margin-bottom: 2.5rem;
+  }
+  .section-title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: var(--paper-dark);
+    border-left: 3px solid var(--navy);
+    padding: 0.4rem 0.8rem;
+    margin-bottom: 1rem;
+    border-radius: 0 3px 3px 0;
+  }
+  .section-subtitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--navy-light);
+    margin: 1.2rem 0 0.6rem;
+    letter-spacing: 0.02em;
+  }
+  .prose p {
+    font-family: 'Lora', serif;
+    font-size: 0.92rem;
+    line-height: 1.85;
+    margin-bottom: 0.9rem;
+    color: #1e1e1e;
+    text-align: justify;
+  }
+
+  mark.q1 { background: var(--q1-bg); color: var(--q1); padding: 0 2px; border-radius: 2px; border-bottom: 1.5px solid var(--q1); font-style: normal; }
+  mark.q2 { background: var(--q2-bg); color: var(--q2); padding: 0 2px; border-radius: 2px; border-bottom: 1.5px solid var(--q2); font-style: normal; }
+  mark.q3 { background: var(--q3-bg); color: var(--q3); padding: 0 2px; border-radius: 2px; border-bottom: 1.5px solid var(--q3); font-style: normal; }
+  mark.q4 { background: var(--q4-bg); color: var(--q4); padding: 0 2px; border-radius: 2px; border-bottom: 1.5px solid var(--q4); font-style: normal; }
+  mark.q5 { background: var(--q5-bg); color: var(--q5); padding: 0 2px; border-radius: 2px; border-bottom: 1.5px solid var(--q5); font-style: normal; }
+
+  /* Right — annotation column */
+  .anno-col {
+    position: sticky;
+    top: 112px;
+    max-height: calc(100vh - 130px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    padding-right: 4px;
+  }
+  .anno-col::-webkit-scrollbar { width: 4px; }
+  .anno-col::-webkit-scrollbar-track { background: transparent; }
+  .anno-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .anno-card {
+    background: #fff;
+    border-radius: 6px;
+    border-left: 4px solid;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.9rem;
+    box-shadow: var(--card-shadow);
+    font-size: 0.8rem;
+    line-height: 1.65;
+  }
+  .anno-card.q1 { border-left-color: var(--q1); }
+  .anno-card.q2 { border-left-color: var(--q2); }
+  .anno-card.q3 { border-left-color: var(--q3); }
+  .anno-card.q4 { border-left-color: var(--q4); }
+  .anno-card.q5 { border-left-color: var(--q5); }
+
+  .anno-tag {
+    display: inline-block;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+    margin-bottom: 0.4rem;
+    color: #fff;
+  }
+  .anno-tag.q1 { background: var(--q1); }
+  .anno-tag.q2 { background: var(--q2); }
+  .anno-tag.q3 { background: var(--q3); }
+  .anno-tag.q4 { background: var(--q4); }
+  .anno-tag.q5 { background: var(--q5); }
+
+  .anno-card .func { color: var(--ink-muted); font-size: 0.72rem; margin-top: 0.25rem; font-style: italic; }
+  .anno-card .logic { color: var(--ink); margin-top: 0.35rem; }
+  .anno-card .level {
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.71rem;
+    color: var(--ink-muted);
+  }
+  .anno-card strong { color: var(--ink); }
+
+  /* ── DIVIDER ── */
+  .sec-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+  }
+
+  /* ── WORKSHEET ── */
+  #worksheet {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--navy);
+  }
+  #worksheet h2 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--navy);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+  .ws-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+  }
+  .ws-card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+  }
+  .ws-header {
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .ws-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1;
+    opacity: 0.18;
+    flex-shrink: 0;
+  }
+  .ws-q-block { flex: 1; }
+  .ws-q-block .label {
+    font-size: 0.63rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+  }
+  .ws-q-block h3 {
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .ws-body { padding: 0 1.2rem 1.2rem; font-size: 0.8rem; line-height: 1.7; }
+  .ws-section { margin-top: 0.7rem; }
+  .ws-section .ws-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 0.2rem;
+  }
+  .ws-card.q1 .ws-header { background: var(--q1-bg); }
+  .ws-card.q1 .ws-num { color: var(--q1); }
+  .ws-card.q1 .label { color: var(--q1); }
+  .ws-card.q2 .ws-header { background: var(--q2-bg); }
+  .ws-card.q2 .ws-num { color: var(--q2); }
+  .ws-card.q2 .label { color: var(--q2); }
+  .ws-card.q3 .ws-header { background: var(--q3-bg); }
+  .ws-card.q3 .ws-num { color: var(--q3); }
+  .ws-card.q3 .label { color: var(--q3); }
+  .ws-card.q4 .ws-header { background: var(--q4-bg); }
+  .ws-card.q4 .ws-num { color: var(--q4); }
+  .ws-card.q4 .label { color: var(--q4); }
+  .ws-card.q5 .ws-header { background: var(--q5-bg); }
+  .ws-card.q5 .ws-num { color: var(--q5); }
+  .ws-card.q5 .label { color: var(--q5); }
+
+  .ws-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.67rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    margin-right: 0.3rem;
+    margin-bottom: 0.2rem;
+  }
+  .badge-evidence { background: #e8f0fe; color: #3050c8; }
+  .badge-limit { background: #fdecea; color: #b22; }
+  .badge-impl { background: #e8f6ef; color: #1a7a4a; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .dual-col { grid-template-columns: 1fr; }
+    .anno-col { position: static; max-height: none; }
+    .ws-grid { grid-template-columns: 1fr; }
+    nav#topbar .legend { display: none; }
+  }
+
+  @media print {
+    nav#topbar, nav#secnav { position: static; }
+    .anno-col { position: static; max-height: none; overflow: visible; }
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    background: var(--navy);
+    border-radius: 6px;
+    padding: 0.8rem 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat { display: flex; flex-direction: column; }
+  .stat .n { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 500; color: #7eb3f5; line-height: 1; }
+  .stat .desc { font-size: 0.65rem; color: #aab8d8; letter-spacing: 0.04em; margin-top: 0.1rem; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ TOP NAVBAR ═══════════ -->
+<nav id="topbar">
+  <div class="brand">
+    <h1>Zhao et al. (2022) · Fire Evacuation with Adaptive Visual Guidance</h1>
+    <div class="meta">MSc Cartography · TU München · 导航界面比较研究文献精读</div>
+  </div>
+  <div class="legend">
+    <span class="legend-chip chip-q1">Q1 VR方法论</span>
+    <span class="legend-chip chip-q2">Q2 自适应效果</span>
+    <span class="legend-chip chip-q3">Q3 架构权衡</span>
+    <span class="legend-chip chip-q4">Q4 MR导航启示</span>
+    <span class="legend-chip chip-q5">Q5 局限与未来</span>
+  </div>
+</nav>
+
+<!-- ═══════════ SECTION NAV ═══════════ -->
+<nav id="secnav">
+  <a href="#abstract" class="active">摘要</a>
+  <a href="#intro">1. 引言</a>
+  <a href="#related">2. 相关工作</a>
+  <a href="#vrexp">3. VR实验</a>
+  <a href="#framework">4. 计算框架</a>
+  <a href="#agent">5. Agent验证</a>
+  <a href="#discussion">6. 讨论</a>
+  <a href="#conclusion">7. 结论</a>
+  <a href="#worksheet">📋 Worksheet</a>
+</nav>
+
+<div class="page-wrap">
+
+<!-- PAPER HEADER -->
+<div class="paper-header">
+  <div class="journal">Safety Science · Vol. 145 · 2022 · DOI: 10.1016/j.ssci.2021.105451</div>
+  <h2>Fire evacuation supported by centralized and decentralized visual guidance systems</h2>
+  <div class="authors">Hantao Zhao · Amray Schwabe · Fabian Schläfli · Tyler Thrash · Leonel Aguilar · Rohit K. Dubey · Joonas Karjalainen · Christoph Hölscher · Dirk Helbing · Victor R. Schinazi<br>
+  <span style="color:#7eb3f5;font-size:0.7rem;">ETH Zürich Chair of Cognitive Science · Southeast University · Bond University</span></div>
+  <div class="tags">
+    <span class="tag">Virtual Reality</span>
+    <span class="tag">Fire Evacuation</span>
+    <span class="tag">Adaptive Signage</span>
+    <span class="tag">Decentralized Systems</span>
+    <span class="tag">Agent-Based Modeling</span>
+    <span class="tag">Wayfinding</span>
+    <span class="tag">NASA-TLX → 生理测量</span>
+  </div>
+</div>
+
+<!-- KEY STATS -->
+<div class="stats-bar">
+  <div class="stat"><span class="n">94</span><span class="desc">VR参与者</span></div>
+  <div class="stat"><span class="n">85</span><span class="desc">有效样本</span></div>
+  <div class="stat"><span class="n">88%</span><span class="desc">自适应条件存活率</span></div>
+  <div class="stat"><span class="n">67%</span><span class="desc">非自适应条件存活率</span></div>
+  <div class="stat"><span class="n">94%</span><span class="desc">Agent自适应存活率</span></div>
+  <div class="stat"><span class="n">&lt;2s</span><span class="desc">两系统最大计算时间</span></div>
+  <div class="stat"><span class="n">3 floors</span><span class="desc">虚拟博物馆规模</span></div>
+  <div class="stat"><span class="n">6</span><span class="desc">疏散情景设计</span></div>
+</div>
+
+<!-- ═══════════ DUAL COLUMN BODY ═══════════ -->
+<div class="dual-col">
+
+<!-- ══════════════════════════════
+     LEFT COLUMN — Original Text
+     ══════════════════════════════ -->
+<div class="text-col">
+
+  <!-- ABSTRACT -->
+  <div class="section-block" id="abstract">
+    <div class="section-title">Abstract · 摘要</div>
+    <div class="prose">
+      <p>In the event of fires and other hazards, visual guidance systems that support evacuation are critical for the safety of individuals. <mark class="q2">Current visual guidances for evacuations are typically non-adaptive signs in that they always indicate the same exit route independently of the hazard's location.</mark> <mark class="q2">Adaptive signage systems can facilitate wayfinding during evacuations by optimizing the route towards the exit based on the current emergency situation.</mark></p>
+      <p><mark class="q2">In this paper, we demonstrate that participants that evacuate a virtual museum using adaptive signs are quicker, use shorter routes, suffer less damage caused by the fire, and report less distress compared to participants using non-adaptive signs.</mark> <mark class="q3">Furthermore, we develop both centralized and decentralized computational frameworks that are capable of calculating the optimal route towards the exit by considering the locations of the fire and automatically adapting the directions indicated by signs.</mark> <mark class="q3">The decentralized system can easily recover from the event of a sign malfunction because the optimal evacuation route is computed locally and communicated by individual signs.</mark> <mark class="q5">Although this approach requires more time to compute than the centralized system, the results of the simulations show that both frameworks need less than two seconds to converge.</mark></p>
+    </div>
+  </div>
+
+  <hr class="sec-divider">
+
+  <!-- INTRO -->
+  <div class="section-block" id="intro">
+    <div class="section-title">1. Introduction · 引言</div>
+    <div class="prose">
+      <p>Fire is an exceedingly dangerous but common hazard in private and public spaces. <mark class="q4">Worldwide, it is estimated that 7,000,000 to 8,000,000 fire incidents occur annually, which lead to 70,000 to 80,000 fire deaths and 500,000 to 800,000 fire injuries.</mark> Although most of these fire incidents are on residential properties, nonresidential building fires still account for over 100,000 cases per year in the US, causing $2.6 billion in property damage.</p>
+      <p><mark class="q4">Whereas it is usually easier to evacuate from familiar properties, it can be more difficult to navigate through unfamiliar public environments when signs provide incorrect or incomplete spatial information.</mark> Research has found that design flaws could undermine the effectiveness of evacuation guidance and thus threaten the safety of users. Indeed, it has been demonstrated that the conventional exit sign without animation or enhanced illumination is not fully visible in unfamiliar environments or helpful for evacuees when poorly designed. Despite these findings, little progress has been made in human–building interaction technologies such as intelligent evacuation systems.</p>
+      <p><mark class="q2">Animation, adaptation, and decentralization can be used to improve existing signage systems. Animations on signs can attract evacuees' attention and indicate a particular direction. The direction indicated by a sign or signage system can also adapt to the location of the hazard by indicating the safest route.</mark> <mark class="q3">While these systems are often centralized, which makes them easier to design and maintain, decentralized systems may be more robust to malfunctions affecting one part of the system.</mark></p>
+      <p><mark class="q1">In this paper, we combine a Virtual Reality (VR) experiment with agent simulations to test the efficiency and effectiveness of a decentralized and adaptive signage system that guides people/agents towards the safest and most efficient route during a simulated fire evacuation.</mark></p>
+    </div>
+  </div>
+
+  <hr class="sec-divider">
+
+  <!-- RELATED WORK -->
+  <div class="section-block" id="related">
+    <div class="section-title">2. Related Work · 相关工作</div>
+    <div class="prose">
+      <p><mark class="q4">Previous research has identified three key factors for successful fire evacuations: evacuation efficiency, information that supports wayfinding, and the emotional stability of the evacuees.</mark> One of the main causes of casualties during fires is exposure to toxic fumes. Indeed, there are two times more fatalities caused by smoke inhalation than fatalities caused by burns. To avoid the danger of smoke, a fast and efficient evacuation is vital. Since the stress of facing dangerous fire situations could affect the cognitive processes and decision making abilities of evacuees, it is important to ensure that they evacuate as quickly and calmly as possible.</p>
+
+      <div class="section-subtitle">2.1 Intelligent fire evacuation systems</div>
+      <p>To overcome the shortcomings of traditional exit signage, numerous researchers have attempted to devise a more intelligent system based on sensor and network technologies. <mark class="q2">Signs with a red "X" symbol were found to be the most dissuasive, and ground installations tend to be more effective than overhead suspensions for guiding evacuees.</mark> Finally, some researchers have introduced novel computational methods to optimize the locations of signs.</p>
+
+      <div class="section-subtitle">2.2 Decentralized system for smart buildings</div>
+      <p><mark class="q3">Intelligent systems concepts such as Intelligent Evacuation Guidance System for Large Building was proposed to adjust evacuation plans based on road conditions and population density. However, such intelligent systems are usually built using a centralized processing and communication entity, which undermines the systems' abilities to handle loss or damage of their components.</mark> <mark class="q3">Current fire alarm systems face the challenge of hardware failure and software failure, especially if the central controlling entity of the system is located in only one physical position.</mark></p>
+      <p><mark class="q3">A decentralized system can avoid situations in which a failed central entity causes a system to collapse by distributing the resource or introducing independent management.</mark></p>
+
+      <div class="section-subtitle">2.3 Virtual reality for fire evacuation research</div>
+      <p><mark class="q1">Fire evacuations can be difficult and unethical to investigate with real participants because of their dangerous nature. Here, VR, field experiments, and agent-based simulations may offer safe and cost-effective alternatives in controlled environments.</mark> <mark class="q1">In addition, VR experiments allow researchers to gain insight regarding the level of stress experienced during an evacuation.</mark> <mark class="q1">Stress and mass panic could severely reduce the efficiency of the evacuation, causing arching and clogging at the exit. At the same time, agent-based simulations allow for the testing of large numbers of different evacuation scenarios in a short amount of time.</mark></p>
+    </div>
+  </div>
+
+  <hr class="sec-divider">
+
+  <!-- VR EXPERIMENT -->
+  <div class="section-block" id="vrexp">
+    <div class="section-title">3. Adaptive Signage Validation with VR Experiment · VR实验</div>
+    <div class="prose">
+      <p>In this experiment, we tested the utility of an adaptive signage system compared to traditional exit signs for fire evacuation from a virtual museum. <mark class="q1">We expected participants using adaptive signage to evacuate more efficiently, more safely, and with lower stress levels. This experiment was approved by the ethics committee of the university.</mark></p>
+
+      <div class="section-subtitle">3.1 Participants</div>
+      <p><mark class="q1">In total, 94 participants (average age of 23 years and a range of 18 to 33 years; 46 women) participated in the study. Nine participants were excluded from the experiment due to simulator sickness or software failures. In addition, two participants were excluded from the behavioral data analysis due to incomplete database recording.</mark> Because of motion artifacts, an additional three participants were excluded from the heart rate variability (HRV) analysis, and three participants were excluded from the electrodermal activity (EDA) analysis. All participants were compensated 30 CHF regardless of how well they performed.</p>
+
+      <div class="section-subtitle">3.2 Materials</div>
+      <p><mark class="q1">For this study, we adapted a 3D model of the Cooper Hewitt Smithsonian Design Museum in New York. This 3D model was chosen because it was sufficiently complex and realistically detailed. The virtual museum was altered using the Unity game engine by placing physical barriers to block specific areas and by adding art installations.</mark></p>
+      <p><mark class="q1">The experiment was conducted using a high-performance gaming computer with a 55" ultra-high-definition television. Participants navigated with a mouse and keyboard control interface, and the virtual museum was presented on a desktop display.</mark> In addition to the behavior data collected during the experiment, we also collected electrodermal activity (EDA) and heart rate data in order to measure participants' physiological responses.</p>
+
+      <div class="section-subtitle">3.2.3 Sign systems</div>
+      <p><mark class="q2">Five types of signs were designed by combining the traditional running person symbol with animated arrows. For both adaptive and non-adaptive sign groups, the arrow signs were animated with a scrolling motion. In the non-adaptive sign group, the signs always directed participants along the shortest path towards the exit of the building without considering paths blocked by fire. In the adaptive sign group, the signs indicated safe directions towards the exit based on the distribution of fire in the building.</mark> <mark class="q2">A red blinking "X" indicated that the route was blocked and that participants should turn around and seek an alternative path.</mark></p>
+
+      <div class="section-subtitle">3.2.4 Fire mechanism</div>
+      <p><mark class="q1">Fire in the virtual environment consisted of visual flames, smoke effects, and physical barriers to prevent passage. Fire locations were designed to block particular routes that would have been safe in normal circumstances.</mark> We defined a health score that ranged from 0 to 1. <mark class="q2">The participants had five minutes to escape, representing the harmful effects of toxic fumes to approximate real-life survival expectancy. If participants were within approximately 0.5 meters from the physical obstacle representing the fire, their health decreased rapidly at the rate of 5% per second.</mark></p>
+
+      <div class="section-subtitle">3.4 Design and analyses</div>
+      <p><mark class="q1">Participants were randomly assigned to one of the four possible trial orders and one of the two sign groups (between-subjects). The two sign types were the only independent variable. The dependent variables consisted of responses to the stress level questionnaires, video game questionnaire, health score, evacuation path length, evacuation time, damage (percentage of health score resulting from direct fire harm), and physiological responses (EDA and HRV).</mark></p>
+
+      <div class="section-subtitle">3.5 Results</div>
+      <p><mark class="q2">In the adaptive sign group, participants successfully evacuated from the building in 111 of 126 (88%) trials. In comparison, participants from the non-adaptive sign group escaped in only 83 of 123 (67%) trials. A two-proportion Z-test confirmed that these survival rates are significantly different (Z = 3.921, p &lt; .001, d = 0.817).</mark></p>
+      <p><mark class="q2">We found a significant difference between the adaptive and non-adaptive sign groups in terms of SSSQ Distress (t(83) = −2.743, p = .008, d = −0.607), health score (t(83) = 4.503, p &lt; .001, d = 0.991), damage (t(83) = −3.689, p &lt; 0.001, d = −0.812), path length (t(83) = −4.571, p &lt; .001, d = −1.006), and time (t(83) = −4.008, p &lt; .001, d = −0.881).</mark></p>
+      <p><mark class="q2">These results demonstrate that participants in adaptive sign group experienced less distress, obtained a higher health score, suffered less damage, and exited the building with shorter path lengths in less time.</mark> We did not find significant differences in terms of SSSQ Engagement, SSSQ Worry, and self-reported stress level immediately after each trial. <mark class="q5">For the physiological measures, we did not find significant differences between the adaptive and non-adaptive sign groups in terms of nSCR or in terms of Log(HF). However, there were significant differences between the baseline and the evacuation routes in terms of nSCR and Log(HF).</mark></p>
+    </div>
+  </div>
+
+  <hr class="sec-divider">
+
+  <!-- COMPUTATIONAL FRAMEWORK -->
+  <div class="section-block" id="framework">
+    <div class="section-title">4. Computational Framework for Adaptive Signs · 计算框架</div>
+    <div class="prose">
+      <p><mark class="q3">We define four requirements for such a framework, including universality, adaptability, autonomy, and robustness. Universality refers to the principle that it should be possible to apply the sign system to any existing building based on the blueprint or 3D model. Adaptability refers to the ability of the framework to quickly respond to detected fire locations by automatically changing the directions of the evacuation signs accordingly. The system should be autonomous so that it is resilient and reliable in the absence of a building supervisor. The system should also be robust so that it is prepared to respond to unpredictable events.</mark></p>
+
+      <div class="section-subtitle">4.2 Sign network graph</div>
+      <p><mark class="q3">To calculate the evacuation paths, a sign network graph was generated based on the topological connections of the fire sensors and their corresponding areas. A directed graph G(V, E) is defined, where the set of nodes V represents all the evacuation signs, and the set of edges E represents navigational routes between two nodes. Each edge is weighted to represent cost, defined as the length of the walking distance.</mark> <mark class="q4">Once a fire breaks out, the graph recalculates sign directions based on the distribution of the fire. If one edge of the node is considered unsafe, this edge is removed from the graph and the system regenerates the optimal route without this edge.</mark></p>
+
+      <div class="section-subtitle">4.3.1 Centralized system</div>
+      <p><mark class="q3">The centralized approach includes a central entity which has access to the information from every sensor and can communicate directly to every sign in the building. Here, each of the signs displays routing information without having any computational ability. Once a fire sensor is triggered, the central entity gathers all the information from the sensors regarding the current locations of different fires in the building and updates the graph accordingly.</mark> <mark class="q3">Disconnection between any sensor and the central entity is treated as a fire situation in the corresponding area.</mark></p>
+
+      <div class="section-subtitle">4.3.2 Decentralized system</div>
+      <p><mark class="q3">For the centralized system, the communication between the central entity and the fire sensors is not always guaranteed because it could be affected by the fire, causing a vital link on the evacuation route to be compromised. In order to overcome such disadvantages, we propose a decentralized system in which the signs are independent of each other and no central entity is required.</mark> <mark class="q3">Here, each sign is equipped with its own computational power that can be used to store the network graph and calculate the new optimal route based on up-to-date information. During a fire, each sign individually updates its path based on information collected from the sensors and communicates the updated path to its neighbors.</mark></p>
+
+      <div class="section-subtitle">4.4 Results</div>
+      <p><mark class="q3">A two-tailed, paired-samples t-test revealed that computational time for the centralized system (mean = 0.001 s, max = 0.003 s, SD = 0.001) was significantly lower than computational time for the decentralized system (mean = 0.838 s, max = 1.788 s, SD = 0.439), t(99) = −19.087, p &lt; .001, d = 2.69.</mark> <mark class="q3">Despite this significant difference, the maximum computational time for either system was below two seconds.</mark></p>
+    </div>
+  </div>
+
+  <hr class="sec-divider">
+
+  <!-- AGENT SIMULATION -->
+  <div class="section-block" id="agent">
+    <div class="section-title">5. Agent Validation · Agent仿真验证</div>
+    <div class="prose">
+      <p><mark class="q1">In order to validate the decentralized adaptive framework, we describe an agent model that is grounded in spatial decision-making and considers the signage system. The agent simulations were implemented in Unity with C#.</mark> <mark class="q1">During a wayfinding task, these agents search and interpret signs to help them find the exit during an evacuation.</mark></p>
+      <p><mark class="q1">In our model, signs were detected by rays cast from within a simulated vision cone that had a field of view of 120 degrees. During the exploration mode, the agent classified every detected sign as indicating either "Enter" (i.e., display arrows) or "Do Not Enter" (i.e., display red "X").</mark></p>
+      <p><mark class="q2">These simulations revealed that 45% of agents in the non-adaptive condition survived and that 94% of agents in the adaptive condition survived. A two-proportion Z-test confirmed that the difference between conditions was significant, Z = 15.977, p &lt; .001.</mark></p>
+      <p><mark class="q5">The surviving agents in the two conditions evacuated in a similar amount of time and traveled a similar distance. This may be attributable to the agents' near perfect memory for nodes already traveled and accurate interpretation of the directions indicated by signs.</mark></p>
+    </div>
+  </div>
+
+  <hr class="sec-divider">
+
+  <!-- GENERAL DISCUSSION -->
+  <div class="section-block" id="discussion">
+    <div class="section-title">6. General Discussion · 讨论</div>
+    <div class="prose">
+      <div class="section-subtitle">6.3 Behavior in VR</div>
+      <p><mark class="q1">Despite the simplification of the interactions between the evacuees and the fire, VR allowed us to measure human behavior in situations that would be otherwise too difficult and dangerous to create. Our desktop virtual reality setup provided realistic interaction between the participants' movements and the visual feedback that they received while allowing them to remain stationary for physiological recording.</mark></p>
+      <p><mark class="q4">In general, head-mounted displays (HMD) can make participants feel more immersed by isolating them from the environment outside of the experiment. This advantage of HMDs may be particularly useful for studies in stressful environments that allow participants to be mobile. Nonetheless, desktop VR can have several benefits compared to HMDs. First, evacuation studies require fine control of movements through the virtual environment, which is easier if the controls are visible. Second, participants are also less familiar with HMDs and tend not to move their heads as often as expected.</mark></p>
+      <p><mark class="q5">While we captured several behavioral differences between the adaptive and non-adaptive conditions in our VR study, our physiological measures were not sufficiently sensitive to reflect these potential differences. In the future, more immersive systems may be employed in order to provide multisensory cues such as heat and smell that typically accompany fire hazards.</mark></p>
+
+      <div class="section-subtitle">6.4 Limitations</div>
+      <p><mark class="q5">Our work represents a first step towards incorporating a decentralized and adaptive signage system into a real building, although for now, our findings and methods are limited to virtual reality. One limitation of virtual reality and any other lab-based experiment is that users' behavior may differ from that in real environments. This may be attributable to the manner in which navigation was controlled with a mouse and keyboard or lack of physical feedback from the fire.</mark></p>
+      <p><mark class="q5">One aspect of fire accidents that was not fully addressed in this study is the effect of smoke. While we have simulated the thermal damage caused by the fire, the harmful effect of smoke was simplified by simulating the general time spent in the building.</mark> <mark class="q4">Future research should aim to integrate smoke simulation models that can potentially replicate the spatio-temporal aspects of the smoke within the indoor environment.</mark></p>
+    </div>
+  </div>
+
+  <hr class="sec-divider">
+
+  <!-- CONCLUSION -->
+  <div class="section-block" id="conclusion">
+    <div class="section-title">7. Conclusion · 结论</div>
+    <div class="prose">
+      <p><mark class="q2">In this study, we demonstrate the efficiency and effectiveness of visual guidances that indicate different directions depending on the location of a hazard during a fire evacuation.</mark> <mark class="q4">This research paves the way for future work on multi-user frameworks that can account for crowd dynamics in public spaces during large-scale disasters. Crowds may increase the amount of time required for route computations as each individual agent attempts to optimize their own escape.</mark> <mark class="q4">Here, it may be useful to connect mobile devices to the building system in order to personalize evacuation instructions. Decentralization may be an especially robust approach in such a scenario because of the larger number and diversity of connected nodes.</mark></p>
+    </div>
+  </div>
+
+</div><!-- end text-col -->
+
+
+<!-- ══════════════════════════════
+     RIGHT COLUMN — Annotations
+     ══════════════════════════════ -->
+<div class="anno-col">
+
+  <div class="anno-card q1">
+    <span class="anno-tag q1">Q1 · VR方法论</span>
+    <div class="func">摘要功能：建立研究范式，预告三层证据结构（VR实验 → 计算框架 → Agent仿真）</div>
+    <div class="logic">本文核心贡献是将<strong>被试行为实验</strong>（n=85）与<strong>计算仿真</strong>（Agent n≈200）结合，形成互补验证。桌面VR作为方法选择的理由：伦理许可 + 生理测量兼容 + 可控疏散情景。</div>
+    <div class="level">→ 回答Q1的第一层：为何用VR而不是真实疏散演练</div>
+  </div>
+
+  <div class="anno-card q2">
+    <span class="anno-tag q2">Q2 · 自适应效果</span>
+    <div class="func">引言：定义"非自适应"缺陷（问题），提出自适应方案（论文核心命题）</div>
+    <div class="logic">论证逻辑：传统标识系统"静态路由"→ 遇火时信息失效 → 适应性标识根据火情实时更新 → 提升疏散效率。这是X-ray Vision vs Minimap的上位框架：两种界面本质上都是<strong>信息传递机制</strong>，本文的核心变量（适应性）直接类比于你的"X-ray视野穿透"优势。</div>
+    <div class="level">→ Q2第一层：自适应信息的理论优势</div>
+  </div>
+
+  <div class="anno-card q3">
+    <span class="anno-tag q3">Q3 · 架构权衡</span>
+    <div class="func">引言：引入集中/去中心化架构讨论，预告系统设计部分</div>
+    <div class="logic">关键张力：集中式 = 简单高效但单点故障；去中心化 = 稳健但延迟高。这一权衡在你的研究中有类比：X-ray Vision提供"全局穿透信息"（类集中式）；Minimap要求用户自主整合信息（类去中心化）。</div>
+    <div class="level">→ Q3第二层：架构选择对用户认知负荷的影响</div>
+  </div>
+
+  <div class="anno-card q1">
+    <span class="anno-tag q1">Q1 · VR方法论</span>
+    <div class="func">相关工作2.3：系统综述VR在疏散研究中的方法论正当性</div>
+    <div class="logic"><strong>关键引用</strong>：VR被视为"safe and cost-effective alternative"。这一论点直接支撑你使用Web-VR（Three.js）作为实验平台的方法论选择。与Kinateder et al. 2014b、Shaw et al. 2019等高引文献形成方法论集群。</div>
+    <div class="level">→ Q1第二层：VR作为疏散研究替代范式的文献支撑</div>
+  </div>
+
+  <div class="anno-card q4">
+    <span class="anno-tag q4">Q4 · MR导航启示</span>
+    <div class="func">引言：量化问题背景，为界面设计的重要性提供现实论据</div>
+    <div class="logic">7-8百万起/年的火灾事故数据建立了紧迫性。"<strong>不熟悉公共环境</strong>"中的导航困难 = 你研究情景的直接背景。X-ray Vision的设计动机正在于此：让不熟悉建筑的人获得"穿透式"空间信息。</div>
+    <div class="level">→ Q4第一层：研究问题的现实紧迫性</div>
+  </div>
+
+  <div class="anno-card q1">
+    <span class="anno-tag q1">Q1 · VR方法论</span>
+    <div class="func">实验方法3.1-3.4：详细描述被试筛除逻辑、样本量确定、组间设计</div>
+    <div class="logic"><strong>值得注意</strong>：94人招募 → 85人有效行为数据（损耗率~10%），与你的30人样本规模差异显著。该研究在ETH Zürich注册系统招募，30 CHF补偿。between-subjects设计（适应性 vs 非适应性）避免了学习效应污染，这与你研究中需要平衡X-ray/Minimap学习顺序的逻辑一致。</div>
+    <div class="level">→ Q1第三层：实验设计决策的依据</div>
+  </div>
+
+  <div class="anno-card q2">
+    <span class="anno-tag q2">Q2 · 自适应效果</span>
+    <div class="func">实验3.2.3-3.2.4：操作化定义自变量（标识系统）和因变量（健康分、路径长、时间）</div>
+    <div class="logic">因变量体系对你的研究有直接参考价值：
+    <br>• <strong>路径效率</strong>（path length + time）= 你的疏散时间指标
+    <br>• <strong>健康分</strong>= 某种形式的"任务成功度"
+    <br>• <strong>SSSQ Distress</strong>= 主观压力，对应NASA-TLX中的心理需求维度
+    <br>注：本文未使用NASA-TLX，而用SSSQ，两者测量构念有重叠但不等同。</div>
+    <div class="level">→ Q2第二层：因变量测量方案的可借鉴性</div>
+  </div>
+
+  <div class="anno-card q2">
+    <span class="anno-tag q2">Q2 · 自适应效果</span>
+    <div class="func">结果3.5：核心量化结论，所有主要行为指标达显著</div>
+    <div class="logic"><strong>效应量分析</strong>：d值均在0.6-1.0之间（中-大效应），统计功效充足。
+    <br>• 存活率差异：88% vs 67%，△=21%，d=0.817
+    <br>• 路径长度：d=−1.006（最大效应）
+    <br>• SSSQ Distress：d=−0.607（中等效应）
+    <br><strong>但生理指标（EDA、HRV）组间无显著差异</strong>，这是重要的方法局限。</div>
+    <div class="level">→ Q2第三层：效应量解读与生理-行为指标分离</div>
+  </div>
+
+  <div class="anno-card q5">
+    <span class="anno-tag q5">Q5 · 局限与未来</span>
+    <div class="func">结果3.5：生理指标（EDA/HRV）的零结果</div>
+    <div class="logic">生理指标组间无显著但条件内（基线vs疏散）显著 → 说明任务本身引发压力反应，但两种标识系统的应激差异被生理测量的<strong>敏感性不足</strong>掩盖。这为你研究中是否纳入生理测量提供了审慎建议：若不使用更精密设备，生理指标可能无法区分界面差异。</div>
+    <div class="level">→ Q5第一层：生理测量的局限性警示</div>
+  </div>
+
+  <div class="anno-card q3">
+    <span class="anno-tag q3">Q3 · 架构权衡</span>
+    <div class="func">框架4.2-4.3：形式化图论模型，描述两种系统的计算逻辑</div>
+    <div class="logic">有向图G(V,E)中：
+    <br>• 节点V = 疏散标识
+    <br>• 边E = 走廊/楼梯连接（权重=距离）
+    <br>集中式：中央实体Dijkstra → 广播结果
+    <br>去中心化：消息从出口节点<strong>反向传播</strong>至各节点（类Bellman-Ford）
+    <br>核心创新：去中心化系统将单点故障转化为局部降级，而非全局崩溃。</div>
+    <div class="level">→ Q3第三层：具体算法设计与鲁棒性机制</div>
+  </div>
+
+  <div class="anno-card q3">
+    <span class="anno-tag q3">Q3 · 架构权衡</span>
+    <div class="func">框架4.4：计算时间的统计比较</div>
+    <div class="logic">集中式：均值0.001s；去中心化：均值0.838s（相差近1000倍），但两者均<2s，远低于理论最坏情况（4.1s）。
+    <br><strong>关键洞察</strong>：计算效率的"绝对差异"在疏散场景中是否有意义？2s的系统响应时间在紧急疏散中属于可接受范围，这支持了"去中心化的稳健性收益超过效率代价"的论点。</div>
+    <div class="level">→ Q3第四层：实际可行性评估（性能 vs 鲁棒性权衡结论）</div>
+  </div>
+
+  <div class="anno-card q1">
+    <span class="anno-tag q1">Q1 · VR方法论</span>
+    <div class="func">Agent仿真5：作为第二层验证，弥补VR样本量和情景数的限制</div>
+    <div class="logic">Agent模型的视野锥（120°FOV）、探索/跟随标识两种模式 = 对真实人类导航行为的简化建模。注意：Agent对已访问节点有"完美记忆"，这与真实人类记忆能力不符（over-idealized），是方法局限之一。但Agent仿真的优势是可测试<strong>数百种起始位置×火情组合</strong>，这是VR实验无法实现的规模。</div>
+    <div class="level">→ Q1第四层：VR实验+Agent仿真互补的方法论价值</div>
+  </div>
+
+  <div class="anno-card q4">
+    <span class="anno-tag q4">Q4 · MR导航启示</span>
+    <div class="func">讨论6.3：桌面VR vs HMD的比较</div>
+    <div class="logic">本文选择桌面VR（键鼠）而非HMD，理由：
+    <br>① 疏散需要精细运动控制
+    <br>② 被试不熟悉HMD，头部转动不自然
+    <br>③ HMD引发模拟器眩晕
+    <br><strong>对你研究的启示</strong>：你的Web-VR同样基于桌面/键鼠，方法论选择与本文一致，可直接引用此处论据支撑方法章节。但X-ray Vision模拟的是HMD/MR功能，这一"功能vs实现平台"的分离需要在论文中明确说明。</div>
+    <div class="level">→ Q4第二层：桌面VR作为MR功能替代测试平台的合理性</div>
+  </div>
+
+  <div class="anno-card q5">
+    <span class="anno-tag q5">Q5 · 局限与未来</span>
+    <div class="func">讨论6.4：系统性列举研究局限</div>
+    <div class="logic">三大局限：
+    <br>① <strong>生态效度</strong>：键鼠控制 ≠ 实体疏散
+    <br>② <strong>烟雾效应未充分模拟</strong>：健康分只是时间的线性函数
+    <br>③ <strong>仅限VR</strong>，未在真实建筑验证
+    <br>对比你研究的局限：缺乏真实建筑数据、30人样本量有限、X-ray Vision为桌面模拟而非真实MR设备，这些局限与本文构成"系列研究"的相同位置，便于论文中的承接性陈述。</div>
+    <div class="level">→ Q5第二层：局限性陈述策略（如何与你的研究局限对话）</div>
+  </div>
+
+  <div class="anno-card q4">
+    <span class="anno-tag q4">Q4 · MR导航启示</span>
+    <div class="func">结论7：展望多用户框架和个性化疏散指令</div>
+    <div class="logic">"connect mobile devices to the building system to personalize evacuation instructions" = 本文对移动/穿戴设备导航的前瞻。这为Mixed Reality疏散导航（如X-ray Vision眼镜）提供了学术引用的上下文。论文中可将本文定位为"静态标识自适应化"的先导研究，将你的研究定位为"个人化、沉浸式界面"的延伸。</div>
+    <div class="level">→ Q4第三层：本文在MR疏散导航研究谱系中的定位</div>
+  </div>
+
+</div><!-- end anno-col -->
+</div><!-- end dual-col -->
+
+
+<!-- ═══════════ WORKSHEET ═══════════ -->
+<div id="worksheet">
+  <h2>📋 Worksheet · 答题索引 — 深度分析卡片</h2>
+  <div class="ws-grid">
+
+    <!-- Q1 -->
+    <div class="ws-card q1">
+      <div class="ws-header">
+        <div class="ws-num">01</div>
+        <div class="ws-q-block">
+          <div class="label">Q1 · VR方法论</div>
+          <h3>本文如何构建桌面VR实验框架来研究疏散行为，其方法论选择的依据与局限是什么？</h3>
+        </div>
+      </div>
+      <div class="ws-body">
+        <div class="ws-section">
+          <div class="ws-label">核心论点</div>
+          桌面VR（键鼠+55寸屏幕）是研究紧急疏散行为的伦理可行替代方案。本文采用<strong>三层证据结构</strong>：VR被试实验（行为效度）→ 计算框架（工程可行性）→ Agent仿真（大规模场景泛化）。被试在3层虚拟博物馆中完成"学习路线+疏散路线"的3次试验，采用between-subjects设计避免标识系统间的学习迁移。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">关键证据</div>
+          <span class="ws-badge badge-evidence">n=94招募</span>
+          <span class="ws-badge badge-evidence">85有效行为样本</span>
+          <span class="ws-badge badge-evidence">EDA+HRV生理测量</span>
+          <span class="ws-badge badge-evidence">Unity EVE框架</span>
+          6条学习路线×6条疏散路线的拉丁方设计，4种试验顺序，保证了火情分布的参与者间平衡。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">潜在反驳 / 局限</div>
+          <span class="ws-badge badge-limit">键鼠控制低生态效度</span>
+          <span class="ws-badge badge-limit">无物理压力（热感、烟味）</span>
+          <span class="ws-badge badge-limit">健康分线性函数过简化</span>
+          生理指标（EDA/HRV）组间无显著差异，说明VR压力诱导可能不足以分辨标识系统差异；Agent记忆完美，高估了真实疏散效率。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">对你研究的启示</div>
+          <span class="ws-badge badge-impl">Web-VR方法论正当性</span>
+          你的Three.js桌面平台与本文方法论立场一致，可直接引用§6.3的桌面VR辩护论据。30人vs 85人的样本差异需在方法局限中说明，但between-subjects设计逻辑是相通的。
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="ws-card q2">
+      <div class="ws-header">
+        <div class="ws-num">02</div>
+        <div class="ws-q-block">
+          <div class="label">Q2 · 自适应效果</div>
+          <h3>自适应标识系统对疏散效率、安全性和主观压力的影响有多大？与你研究的界面比较有何可类比之处？</h3>
+        </div>
+      </div>
+      <div class="ws-body">
+        <div class="ws-section">
+          <div class="ws-label">核心论点</div>
+          自适应标识在所有<strong>5项主要指标</strong>上优于非自适应标识（p&lt;.001），效应量均为中到大效应（d=0.6-1.0）。存活率提升21%（88% vs 67%），路径长度效应最大（d=1.006）。本文的"适应性"本质是<strong>信息的动态准确性</strong>——这与X-ray Vision的核心优势（穿透障碍提供准确空间信息）在机制上高度类似。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">关键证据</div>
+          <span class="ws-badge badge-evidence">存活率 Z=3.921, d=0.817</span>
+          <span class="ws-badge badge-evidence">路径长度 d=−1.006</span>
+          <span class="ws-badge badge-evidence">疏散时间 d=−0.881</span>
+          <span class="ws-badge badge-evidence">SSSQ Distress d=−0.607</span>
+          Agent仿真将效应放大：94% vs 45%存活率，说明在更复杂的起始条件下，信息准确性的优势更为突出。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">潜在反驳 / 局限</div>
+          <span class="ws-badge badge-limit">SSSQ Worry无显著差异</span>
+          <span class="ws-badge badge-limit">生理指标组间无显著</span>
+          <span class="ws-badge badge-limit">静态火情（不蔓延）</span>
+          自适应标识的指令是"外挂"于环境的，被试无需内化空间布局；而Minimap/X-ray Vision测试的是用户<strong>主动处理和整合</strong>导航信息的能力——这是两类研究的重要区别。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">对你研究的启示</div>
+          <span class="ws-badge badge-impl">因变量框架参考</span>
+          <span class="ws-badge badge-impl">信息准确性→疏散效率链条</span>
+          本文建立了"界面信息质量 → 行为绩效"的因果链。你的研究需要进一步区分：X-ray Vision是否在<strong>无辅助疏散阶段</strong>（post-learning）也维持优势，还是学习阶段更有效？这是你研究的核心假设之一。
+        </div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="ws-card q3">
+      <div class="ws-header">
+        <div class="ws-num">03</div>
+        <div class="ws-q-block">
+          <div class="label">Q3 · 架构权衡</div>
+          <h3>集中式与去中心化自适应标识系统在性能和鲁棒性上如何权衡？这一框架对导航界面设计有何启示？</h3>
+        </div>
+      </div>
+      <div class="ws-body">
+        <div class="ws-section">
+          <div class="ws-label">核心论点</div>
+          集中式系统<strong>效率更高</strong>（计算时间0.001s vs 0.838s），去中心化系统<strong>鲁棒性更强</strong>（单节点故障不导致全局崩溃）。但两者在实际应用中的绝对时间差（&lt;2s）在疏散场景下均可接受。这是一个经典的<strong>效率-鲁棒性权衡</strong>，类比于你研究中Minimap（高效但需要用户认知整合）vs X-ray Vision（实时但信息密度高）的权衡。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">关键证据</div>
+          <span class="ws-badge badge-evidence">集中式 mean=0.001s, max=0.003s</span>
+          <span class="ws-badge badge-evidence">去中心化 mean=0.838s, max=1.788s</span>
+          <span class="ws-badge badge-evidence">两者均&lt;理论最坏情况(4.1s)</span>
+          节点故障仿真（1-5节点故障，100次重复）：去中心化mean=1.306s，max=2.823s，仍远低于理论最坏5.3s。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">潜在反驳 / 局限</div>
+          <span class="ws-badge badge-limit">仅在Unity中仿真未实体验证</span>
+          <span class="ws-badge badge-limit">传感器区域手动划定</span>
+          <span class="ws-badge badge-limit">仅考虑火情位置未考虑人群密度</span>
+          图论模型假设边权重为静态走路距离，未考虑拥挤时的有效通行成本（Helbing et al. 2000的"逃生恐慌"现象）。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">对你研究的启示</div>
+          <span class="ws-badge badge-impl">信息架构类比</span>
+          X-ray Vision = "去中心化"（每个物体/墙体独立渲染穿透信息，本地计算）；Minimap = "集中式"（全局地图统一呈现）。这一类比可为你的讨论章节提供理论框架，探讨两种界面在认知负荷分配上的差异。
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="ws-card q4">
+      <div class="ws-header">
+        <div class="ws-num">04</div>
+        <div class="ws-q-block">
+          <div class="label">Q4 · MR导航启示</div>
+          <h3>本文研究对比较X-ray Vision与Minimap的Mixed Reality导航研究有哪些直接方法论和理论借鉴？</h3>
+        </div>
+      </div>
+      <div class="ws-body">
+        <div class="ws-section">
+          <div class="ws-label">核心论点</div>
+          本文是迄今为止最接近你研究情景的"前驱研究"：相同的VR疏散情景，相同的方法论框架（被试实验+仿真），相同的关注点（界面设计对疏散效率/认知负荷的影响）。主要区别：本文的自变量是标识系统的<strong>信息适应性</strong>，你的自变量是导航界面的<strong>呈现模式</strong>（空间外显化程度）。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">关键证据</div>
+          <span class="ws-badge badge-evidence">三因素框架：效率+信息+情绪稳定</span>
+          <span class="ws-badge badge-evidence">HMD vs 桌面VR对比论述</span>
+          <span class="ws-badge badge-evidence">个性化疏散指令展望</span>
+          疏散成功的三因素（§2）直接映射到你的三个研究问题：学习效率（Q1）、认知负荷/NASA-TLX（Q2）、无辅助疏散决策（Q3）。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">潜在反驳 / 局限</div>
+          <span class="ws-badge badge-limit">未比较不同界面呈现模式</span>
+          <span class="ws-badge badge-limit">只有一种导航辅助（标识）</span>
+          <span class="ws-badge badge-limit">未测量空间知识获取</span>
+          本文不测量空间知识（SBSOD / sketch map），而你的研究核心是空间认知的学习与迁移——这是你研究的<strong>独特贡献</strong>，本文未填补。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">对你研究的启示</div>
+          <span class="ws-badge badge-impl">文献定位</span>
+          <span class="ws-badge badge-impl">因变量借鉴</span>
+          论文引言中可这样定位：本文证明了"动态准确信息对疏散绩效的提升"，而你的研究进一步追问"<strong>不同空间呈现方式如何影响用户内化建筑布局的能力</strong>"——从信息传递转向空间认知习得。
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="ws-card q5">
+      <div class="ws-header">
+        <div class="ws-num">05</div>
+        <div class="ws-q-block">
+          <div class="label">Q5 · 局限与未来</div>
+          <h3>本文有哪些核心局限，这些局限如何启发你研究的设计决策与未来研究方向的撰写？</h3>
+        </div>
+      </div>
+      <div class="ws-body">
+        <div class="ws-section">
+          <div class="ws-label">核心论点</div>
+          本文自述的主要局限：① 桌面VR生态效度不足（键鼠控制，无物理感官反馈）；② 烟雾效应简化为线性时间函数；③ 生理指标对组间差异不敏感；④ Agent模型假设行为过于理想化（完美记忆）；⑤ 静态火情不蔓延，与真实情景差异大。这些局限共同构成了本文"第一步"的定位。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">关键证据</div>
+          <span class="ws-badge badge-evidence">EDA/HRV组间p=0.55, 0.22（无显著）</span>
+          <span class="ws-badge badge-evidence">VR仅限虚拟实现</span>
+          <span class="ws-badge badge-evidence">Agent完美记忆假设</span>
+          自述局限位于§6.4，可直接援引。特别是生理指标的零结果是对后续研究者的重要警告。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">潜在反驳 / 局限</div>
+          <span class="ws-badge badge-limit">未来研究建议过于宏大</span>
+          <span class="ws-badge badge-limit">真实建筑验证可行性未讨论</span>
+          <span class="ws-badge badge-limit">用户个体差异（空间能力）未考量</span>
+          本文完全未考虑用户空间能力差异（SBSOD），而这正是你研究的调节变量之一。在拥有高/低空间能力的参与者中，不同界面的效果是否分化？本文无法回答。
+        </div>
+        <div class="ws-section">
+          <div class="ws-label">对你研究的启示</div>
+          <span class="ws-badge badge-impl">局限陈述策略</span>
+          <span class="ws-badge badge-impl">未来研究定位</span>
+          你的论文"未来研究"部分可明确指出：延伸本文的方向包括① 引入真实MR设备（HoloLens）；② 考虑空间能力个体差异；③ 增加真实建筑验证。这些既承接本文，又突显你研究的增量贡献。
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end ws-grid -->
+</div><!-- end worksheet -->
+
+</div><!-- end page-wrap -->
+
+<script>
+  // Sticky section nav active state
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('nav#secnav a');
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          link.classList.remove('active');
+          if (link.getAttribute('href') === '#' + entry.target.id) {
+            link.classList.add('active');
+          }
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(sec => observer.observe(sec));
+</script>
+
+</body>
+</html>
